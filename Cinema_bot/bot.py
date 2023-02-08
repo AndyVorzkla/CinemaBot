@@ -20,13 +20,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 if not TELEGRAM_TOKEN:
     exit("Specify TELEGRAM_TOKEN")
-
-# async def main():
-#     bot = telegram.Bot(TELEGRAM_TOKEN)
     
-#     async with bot:
-#         print(await bot.get_me())
-
 if __name__ == '__main__':
     application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
