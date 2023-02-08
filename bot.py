@@ -1,10 +1,15 @@
 import os
 import logging
 import telegram
+import requests
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 import asyncio
 from dotenv import load_dotenv
+import commands
+
+print(commands.a)
+
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -14,25 +19,21 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-async def main():
-    bot = telegram.Bot(TELEGRAM_TOKEN)
+# async def main():
+#     bot = telegram.Bot(TELEGRAM_TOKEN)
     
-    async with bot:
-        print(await bot.get_me())
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a cinema bot, please talk to me")
-
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
-
+#     async with bot:
+#         print(await bot.get_me())
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    start_handler = CommandHandler('start', start)
-    echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+    start_handler = CommandHandler('start', commands.start)
+    echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), commands.echo)
+    caps_handler = CommandHandler('caps', commands.caps)
+
     application.add_handler(start_handler)
     application.add_handler(echo_handler)
+    application.add_handler(caps_handler)
     
     application.run_polling()
