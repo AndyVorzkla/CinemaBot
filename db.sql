@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS movies_genres;
 
 CREATE TABLE IF NOT EXISTS bot_user (
     id INTEGER PRIMARY KEY,
-    telegram_id BIGINT NOT NULL,
+    telegram_id BIGINT NOT NULL UNIQUE,
     username TEXT NOT NULL,
     user_first_name TEXT,
     user_second_name TEXT,
