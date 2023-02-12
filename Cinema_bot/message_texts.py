@@ -1,4 +1,4 @@
-GREETINGS = """ Привеет!
+GREETINGS = """ Привеет, <b>{username}</b>!
 
 Это Telegram bot для всех любителей кино.
 

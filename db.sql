@@ -6,8 +6,11 @@ DROP TABLE IF EXISTS movies_genres;
 
 CREATE TABLE IF NOT EXISTS bot_user (
     id INTEGER PRIMARY KEY,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    telegram_id BIGINT NOT NULL
+    telegram_id BIGINT NOT NULL UNIQUE,
+    username TEXT NOT NULL,
+    user_first_name TEXT,
+    user_second_name TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS genres (
@@ -75,5 +78,6 @@ VALUES
 	("фантастика"),
     ("фильм-нуар"),
     ("фэнтези"),
-    ("церемония");
+    ("церемония"),
+    ("нет данных");
 
