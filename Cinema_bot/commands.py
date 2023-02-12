@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 import aiosqlite
+import requests
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from bot import logger
@@ -25,10 +26,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_first_name = update.message.from_user.first_name
         user_second_name = update.message.from_user.last_name
 
-        # await conn.execute(
-        #     'INSERT INTO bot_user \
-        #     (telegram_id, username, user_first_name, user_second_name)\
-        #     VALUES (?, ?, ?, ?) ON CONFLICT telegram_id ABORT;', (telegram_id, username, user_first_name, user_second_name))
         try:
             await conn.execute(
                 'INSERT OR ABORT INTO bot_user \
@@ -43,22 +40,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id,
             text=message_texts.GREETINGS.format(username=username), parse_mode='HTML')
 
-async def save_to_db(city, weather):
-    async with aiosqlite.connect('weather.db') as db:
-        await db.execute('INSERT INTO requests VALUES (?, ?, ?)',
-                         (datetime.now(), city, weather))
-        await db.commit()
+
+async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    effective_chat = update.effective_chat
+
+    if not effective_chat:
+        logger.warning('effectuve_chat is None')
+    
 
 
-
-    response = "\n".join((book.name for book in categorys)) 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
-
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=message_texts.GREETINGS
-        )
 
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):

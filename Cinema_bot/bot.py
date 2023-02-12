@@ -26,6 +26,7 @@ if __name__ == '__main__':
 
     start_handler = CommandHandler('start', commands.start)
     help_handler = CommandHandler('help', commands.help)
+    
     application.add_handler(start_handler)
     application.add_handler(help_handler)
     
