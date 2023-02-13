@@ -20,9 +20,10 @@ CREATE TABLE IF NOT EXISTS genres (
 
 CREATE TABLE IF NOT EXISTS movies (
     id INTEGER PRIMARY KEY,
-    movie_name VARCHAR(60),
+    kinopoisk_id INTEGER UNIQUE,
+    movie_name VARCHAR(60) NOT NULL,
     details TEXT,
-    picture BLOB,
+    picture TEXT,
     kinopoisk_url TEXT,
     youtube_url TEXT
 );
