@@ -1,0 +1,1 @@
+SQLITE_DB_FILE = r'C:\Users\AndyVorzkla\Projects\PythonProjects\Telegram\CinemaBot\db.sqlite3' 
