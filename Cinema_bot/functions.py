@@ -34,11 +34,18 @@ def movie_class_from_json(data: dict):
     movie_dict['picture'] = data['poster']['url']
     
     # find official trailer
+    video_url = None
     for dict_trailers in data['videos']['trailers']:
-        if dict_trailers.get('name', None) == 'Official Trailer':
-            url = dict_trailers['url']
-            movie_dict['youtube_url'] = url
-    
+        if 'youtube' in dict_trailers.get('site', None).lower() and video_url is None:
+            video_url = dict_trailers.get('url', None)
+
+        if 'official trailer' in dict_trailers.get('name', '').lower():
+            video_url = dict_trailers.get('url', video_url)
+            movie_dict['youtube_url'] = video_url
+            break
+    else:
+        movie_dict['youtube_url'] = video_url
+        
     movie_class = data_class.Movie(**movie_dict)
 
     return movie_class
@@ -52,7 +59,6 @@ async def find_movie(name_or_url: str):
     base_url = r'https://api.kinopoisk.dev/movie?'
 
     if 'kinopoisk.ru' in name_or_url:
-        # pattern = r'\/(?P<id>[\d]+)\/'
         pattern = r'\/(?P<id>[\d]+)'
         match = re.search(pattern, name_or_url)
 

@@ -65,7 +65,9 @@ async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 await conn.commit()
                 await context.bot.send_message(chat_id=update.effective_chat.id,
-                text=f'A new movie in DB: <b>{movie_class.movie_name}</b>, is added', parse_mode='HTML')
+                text=f'A new movie: <b>{movie_class.movie_name}</b>, is added in DB', parse_mode='HTML')
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                text=movie_class.youtube_url)
                 
             except aiosqlite.IntegrityError:
                 logger.error('Movie is already in db')
