@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     start_handler = CommandHandler('start', commands.start)
     help_handler = CommandHandler('help', commands.help)
-    movie_roll_add_handler = CommandHandler('movie_roll_add', commands.movie_roll_add)
+    movie_roll_add_handler = CommandHandler('add', commands.movie_roll_add)
     
     application.add_handler(start_handler)
     application.add_handler(help_handler)

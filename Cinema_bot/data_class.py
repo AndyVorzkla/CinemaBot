@@ -7,6 +7,7 @@ class Category:
 
 @dataclass(kw_only=True)
 class Movie:
+    id: int = None
     kinopoisk_id: int
     movie_name: str
     details: str = None
