@@ -155,38 +155,18 @@ async def check_movie_in_db(kinopoisk_id: str):
             else:
                 False
                 
-async def insert_movie_genre(genres: tuple, movie_id: int):
-    '''
-    Add all matches between genre and movie on ManyToMany DB - movies_genres
-    '''
-    questionmarks = '?' * len(genres)
-    sql_1 = """SELECT id FROM genres WHERE genre_name IN ({})""".format(','.join(questionmarks))
-    sql_2 = """INSERT OR ABORT INTO movies_genres (movie_id, genre_id) VALUES (?, ?)"""
-    print('i am there', movie_id, genres)
-    async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
-        conn.row_factory = aiosqlite.Row
-
-        async with conn.execute(sql_1, genres) as cursor:
-            rows =  await cursor.fetchall()
-
-        ids = tuple(dict(row)['id'] for row in rows)
-        print(ids)
-        movie_genres_data = [(movie_id, id) for id in ids]
-        try:
-            print('executemany')
-            await conn.executemany(sql_2, movie_genres_data)
-            await conn.commit()
-        except:
-            # Продумать exception 
-            pass
             
-async def insert_movie_in_db(movie_class: data_class.Movie):
+async def insert_movie_in_db(movie_class: data_class.Movie, genres: tuple):
+    questionmarks = '?' * len(genres)
+    sql_0 = """INSERT OR ABORT INTO movies (kinopoisk_id, movie_name, details, picture, kinopoisk_url, youtube_url) VALUES (?, ?, ?, ?, ?, ?);"""
+    sql_1 = """SELECT id FROM movies WHERE kinopoisk_id = (?);"""
+    sql_2 = """SELECT id FROM genres WHERE genre_name IN ({})""".format(','.join(questionmarks))
+    sql_3 = """INSERT OR ABORT INTO movies_genres (movie_id, genre_id) VALUES (?, ?)"""
+
     async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
+            conn.row_factory = aiosqlite.Row
             try:
-                await conn.execute(
-                    'INSERT OR ABORT INTO movies \
-                    (kinopoisk_id, movie_name, details, picture, kinopoisk_url, youtube_url)\
-                    VALUES (?, ?, ?, ?, ?, ?);', (
+                await conn.execute(sql_0, (
                         movie_class.kinopoisk_id,
                         movie_class.movie_name,
                         movie_class.details,
@@ -198,7 +178,25 @@ async def insert_movie_in_db(movie_class: data_class.Movie):
                 
             except aiosqlite.IntegrityError:
                 logger.error('Already ib DB sqlite exception')
+            
+            async with conn.execute(sql_1, (movie_class.kinopoisk_id,)) as cursor:
+                movie_row = await cursor.fetchone()
 
+            async with conn.execute(sql_2, genres) as cursor:
+                rows =  await cursor.fetchall()
+
+            movie_id = dict(movie_row)['id']
+            ids = tuple(dict(row)['id'] for row in rows)
+            movie_genres_data = [(movie_id, id) for id in ids]
+
+            try:
+                await conn.executemany(sql_3, movie_genres_data)
+                await conn.commit()
+            except:
+                # Продумать exception 
+                pass
+
+        
 
 
 # movie_class = find_movie('https://www.kinopoisk.ru/film/428/')
