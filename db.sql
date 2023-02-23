@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS user_movie (
 );
 
 CREATE TABLE IF NOT EXISTS movies_genres (
-    movie_id INTEGER,
-    genre_id INTEGER,
+    movie_id INTEGER NOT NULL,
+    genre_id INTEGER NOT NULL,
     FOREIGN KEY(movie_id) REFERENCES movies(id),
     FOREIGN KEY(genre_id) REFERENCES genres(id)
 );

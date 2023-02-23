@@ -13,49 +13,99 @@ from bot import logger
 
 load_dotenv()
 
+class FinderMovieInfo:
+
+    def __init__(self, data: dict) -> None:
+        self.data = data
+        self.movie_dict = {}
+        self.genre_set = None
+
+    def _find_genres(self):
+        is_genres_exist = self.data.get('genres', False)
+        genres = set()
+        if is_genres_exist:
+            for genre_d in is_genres_exist:
+                genre = genre_d.get('name', 'нет данных')
+                if genre not in genres:
+                    genres.add(genre)
+        else:
+            genres.add('нет данных')
+
+        self.genre_set = tuple(genres)
+    
+    def _find_english_title_or_another(self):
+        for dict_name in self.data['names']:
+            name = dict_name['name']
+            new_name = ''.join(filter(str.isalnum, name))
+            pattern = r'[a-zA-Z]+'
+            match_object = re.fullmatch(pattern, new_name)
+            if match_object is not None:
+                self.movie_dict['movie_name'] = name
+                break
+            else:
+                continue
+        else:
+            self.movie_dict['movie_name'] = self.data['names'][-1]['name']
+
+    def _find_official_trailer_or_any_youtube(self):
+        video_url = None
+        for dict_trailers in self.data['videos']['trailers']:
+            if 'youtube' in dict_trailers.get('site', None).lower() and video_url is None:
+                video_url = dict_trailers.get('url', None)
+
+            if 'official trailer' in dict_trailers.get('name', '').lower():
+                video_url = dict_trailers.get('url', video_url)
+                self.movie_dict['youtube_url'] = video_url
+                break
+        else:
+            self.movie_dict['youtube_url'] = video_url
+    
+    def _find_picture(self):
+        is_poster_exist = self.data.get('poster', False)
+        if is_poster_exist:
+            self.movie_dict['picture'] = is_poster_exist.get('url', r'https://imgholder.ru/400x400/03001C/B6EADA&text=Unfortunately,+the+poster+is+missing&font=bebas&fz=28')
+        else:
+            self.movie_dict['picture']  = r'https://imgholder.ru/400x400/03001C/B6EADA&text=Unfortunately,+the+poster+is+missing&font=bebas&fz=28'
+    
+    def _find_kinopoisk_id(self):
+        kinopoisk_id = self.data.get('id', None)
+        self.movie_dict['kinopoisk_id'] = kinopoisk_id
+    
+    def _find_kinopoisk_url(self):
+        kinopoisk_url = r'https://www.kinopoisk.ru/film/{}/'.format(self.data['id'])
+        self.movie_dict['kinopoisk_url'] = kinopoisk_url
+    
+    def _find_details(self):
+        details = self.data.get('description', None)
+        self.movie_dict['details'] = details
+    
+    def create_movie_class(self):
+        functions_ = [
+            '_find_kinopoisk_id',
+            '_find_english_title_or_another',
+            '_find_details',
+            '_find_picture',
+            '_find_kinopoisk_url',
+            '_find_official_trailer_or_any_youtube',
+            '_find_genres']
+        
+        for function in functions_:
+            getattr(self, function)()
+        
+        try:
+            movie_class = data_class.Movie(**self.movie_dict)
+        except TypeError:  
+            logger.error("Can't add in database")
+
+        return movie_class
+
 
 def movie_class_from_json(data: dict):
-    movie_dict = {}
+    finder = FinderMovieInfo(data=data)
+    movie_class = finder.create_movie_class()
+    genres = finder.genre_set
+    return (movie_class, genres)
 
-    # find english title
-    for dict_name in data['names']:
-        name = dict_name['name']
-        new_name = ''.join(filter(str.isalnum, name))
-        pattern = r'[a-zA-Z]+'
-        match_object = re.fullmatch(pattern, new_name)
-        if match_object is not None:
-            movie_dict['movie_name'] = name
-            break
-        else:
-            continue
-    else:
-        movie_dict['movie_name'] = data['names'][-1]['name']
-
-    movie_dict['kinopoisk_id'] = data['id']
-    movie_dict['kinopoisk_url'] = r'https://www.kinopoisk.ru/film/{}/'.format(data['id'])
-    movie_dict['details'] = data['description']
-    movie_dict['picture'] = data['poster']['url']
-    
-    # find official trailer
-    video_url = None
-    for dict_trailers in data['videos']['trailers']:
-        if 'youtube' in dict_trailers.get('site', None).lower() and video_url is None:
-            video_url = dict_trailers.get('url', None)
-
-        if 'official trailer' in dict_trailers.get('name', '').lower():
-            video_url = dict_trailers.get('url', video_url)
-            movie_dict['youtube_url'] = video_url
-            break
-    else:
-        movie_dict['youtube_url'] = video_url
-
-    try:
-        movie_class = data_class.Movie(**movie_dict)
-    except TypeError:
-        logger.error("Cam't add in database")
-
-    return movie_class
-    
 async def find_movie(id: str):
     """
     Downloads details about movie from KinopoiskAPI
@@ -72,8 +122,8 @@ async def find_movie(id: str):
             data = await response.json()
             if data.get('message') == 'id not found':
                 raise SyntaxWarning("I didn't find this movie on https://www.kinopoisk.ru")
-            movie_class = movie_class_from_json(data)
-            return movie_class
+            movie_class, genres = movie_class_from_json(data)
+            return (movie_class, genres)
 
 def check_if_url_return_id(url: str):
     """
@@ -89,6 +139,7 @@ def check_if_url_return_id(url: str):
             raise SyntaxWarning('Url is not correct. Example "https://www.kinopoisk.ru/film/100/"')
     else:
         return False
+    
 
 async def check_movie_in_db(kinopoisk_id: str): 
     """
@@ -103,6 +154,31 @@ async def check_movie_in_db(kinopoisk_id: str):
                 return data_class.Movie(**dict(row))
             else:
                 False
+                
+async def insert_movie_genre(genres: tuple, movie_id: int):
+    '''
+    Add all matches between genre and movie on ManyToMany DB - movies_genres
+    '''
+    questionmarks = '?' * len(genres)
+    sql_1 = """SELECT id FROM genres WHERE genre_name IN ({})""".format(','.join(questionmarks))
+    sql_2 = """INSERT OR ABORT INTO movies_genres (movie_id, genre_id) VALUES (?, ?)"""
+    print('i am there', movie_id, genres)
+    async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
+        conn.row_factory = aiosqlite.Row
+
+        async with conn.execute(sql_1, genres) as cursor:
+            rows =  await cursor.fetchall()
+
+        ids = tuple(dict(row)['id'] for row in rows)
+        print(ids)
+        movie_genres_data = [(movie_id, id) for id in ids]
+        try:
+            print('executemany')
+            await conn.executemany(sql_2, movie_genres_data)
+            await conn.commit()
+        except:
+            # Продумать exception 
+            pass
             
 async def insert_movie_in_db(movie_class: data_class.Movie):
     async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:

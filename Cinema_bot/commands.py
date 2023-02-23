@@ -56,9 +56,10 @@ async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     text=f'A movie: <b>{result.movie_name}</b>, is already in DB', parse_mode='HTML')
 
             elif not result:
-                movie_class = await functions.find_movie(id)
+                movie_class, genres = await functions.find_movie(id)
 
                 await functions.insert_movie_in_db(movie_class)
+                await functions.insert_movie_genre(genres, movie_class.id) 
                 media_response = movie_class.youtube_url
                 if media_response is None:
                     media_response = movie_class.picture
