@@ -100,12 +100,25 @@ class FinderMovieInfo:
         return movie_class
 
 
+    
 def movie_class_from_json(data: dict):
     finder = FinderMovieInfo(data=data)
     movie_class = finder.create_movie_class()
     genres = finder.genre_set
     return (movie_class, genres)
 
+async def check_registration(telegram_id: int):
+    sql = """SELECT * FROM bot_user WHERE telegram_id = (?);"""
+
+    async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
+        conn.row_factory = aiosqlite.Row
+        async with conn.execute(sql, (telegram_id,)) as cursor:
+                user_row = await cursor.fetchone()
+                if user_row:
+                    return data_class.User(**dict(user_row))
+                else:
+                    return False
+    
 async def find_movie(id: str):
     """
     Downloads details about movie from KinopoiskAPI
@@ -140,7 +153,6 @@ def check_if_url_return_id(url: str):
     else:
         return False
     
-
 async def check_movie_in_db(kinopoisk_id: str): 
     """
     Return Movie data_class if movie already in DB, False if not
@@ -153,15 +165,15 @@ async def check_movie_in_db(kinopoisk_id: str):
             if row:
                 return data_class.Movie(**dict(row))
             else:
-                False
-                
-            
-async def insert_movie_in_db(movie_class: data_class.Movie, genres: tuple):
+                return False
+                       
+async def insert_movie_in_db(movie_class: data_class.Movie, genres: tuple, user_telegram_id: int):
     questionmarks = '?' * len(genres)
     sql_0 = """INSERT OR ABORT INTO movies (kinopoisk_id, movie_name, details, picture, kinopoisk_url, youtube_url) VALUES (?, ?, ?, ?, ?, ?);"""
     sql_1 = """SELECT id FROM movies WHERE kinopoisk_id = (?);"""
-    sql_2 = """SELECT id FROM genres WHERE genre_name IN ({})""".format(','.join(questionmarks))
-    sql_3 = """INSERT OR ABORT INTO movies_genres (movie_id, genre_id) VALUES (?, ?)"""
+    sql_2 = """SELECT id FROM genres WHERE genre_name IN ({});""".format(','.join(questionmarks))
+    sql_3 = """INSERT OR ABORT INTO movies_genres (movie_id, genre_id) VALUES (?, ?);"""
+    # sql_5 = """INSERT OT ABORT INTO user_movie (user_id, movie_id, priority_weight) VALUES (?, ?, ?);"""
 
     async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
             conn.row_factory = aiosqlite.Row
@@ -177,26 +189,43 @@ async def insert_movie_in_db(movie_class: data_class.Movie, genres: tuple):
                 await conn.commit()
                 
             except aiosqlite.IntegrityError:
-                logger.error('Already ib DB sqlite exception')
+                logger.error('Already in DB sqlite exception')
             
             async with conn.execute(sql_1, (movie_class.kinopoisk_id,)) as cursor:
                 movie_row = await cursor.fetchone()
 
             async with conn.execute(sql_2, genres) as cursor:
+                """
+                Return ids of genres in genre DB
+                """
                 rows =  await cursor.fetchall()
 
             movie_id = dict(movie_row)['id']
+
+            # Genres ids of current movie
             ids = tuple(dict(row)['id'] for row in rows)
             movie_genres_data = [(movie_id, id) for id in ids]
 
             try:
                 await conn.executemany(sql_3, movie_genres_data)
                 await conn.commit()
-            except:
-                # Продумать exception 
-                pass
+            except aiosqlite.IntegrityError:
+                logger.error('Already in GenreMovies (M-T-M) sqlite exception')
 
-        
+                            
+
+async def insert_into_user_movie_relation(movie_class: data_class.Movie, user_class: data_class.User):
+    sql = """INSERT OR ABORT INTO user_movie (user_id, movie_id) VALUES (?, ?);"""
+
+    async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
+        conn.row_factory = aiosqlite.Row
+        try:
+            await conn.execute(sql, (user_class.id, movie_class.id,))
+            await conn.commit()
+        except aiosqlite.IntegrityError:
+                logger.error('User movie reference error sqlite exception')
+
+    
 
 
 # movie_class = find_movie('https://www.kinopoisk.ru/film/428/')

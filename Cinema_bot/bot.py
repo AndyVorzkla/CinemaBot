@@ -28,9 +28,11 @@ if __name__ == '__main__':
     start_handler = CommandHandler('start', commands.start)
     help_handler = CommandHandler('help', commands.help)
     movie_roll_add_handler = CommandHandler('add', commands.movie_roll_add)
+    my_movie_handler = CommandHandler('my', commands.my_movies)
     
     application.add_handler(start_handler)
     application.add_handler(help_handler)
     application.add_handler(movie_roll_add_handler)
+    application.add_handler(my_movie_handler)
 
     application.run_polling()

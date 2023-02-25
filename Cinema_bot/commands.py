@@ -39,26 +39,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     effective_chat = update.effective_chat
+    user_telegram_id = update.message.from_user.id
 
     if not effective_chat:
         logger.warning('effective_chat is None')
+    
+    user_class = await functions.check_registration(user_telegram_id)
+    if not user_class:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                text='Registration fail. Write /start')
+        return False
     
     message = ''.join(context.args)
     
     try:
         id = functions.check_if_url_return_id(message)
         if id:
-            result = await functions.check_movie_in_db(id)
-            if isinstance(result, data_class.Movie):
+            movie_class = await functions.check_movie_in_db(id)
+            if isinstance(movie_class, data_class.Movie):
                 logger.info('Movie is already in db')
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=f'A movie: <b>{result.movie_name}</b>, is already in DB', parse_mode='HTML')
+                    text=f'A movie: <b>{movie_class.movie_name}</b>, is already in DB', parse_mode='HTML')
 
-            elif not result:
+            elif not movie_class:
                 movie_class, genres = await functions.find_movie(id)
 
-                await functions.insert_movie_in_db(movie_class, genres)
+                await functions.insert_movie_in_db(movie_class, genres, user_telegram_id)
                 # await functions.insert_movie_genre(genres, movie_class.id) 
                 media_response = movie_class.youtube_url
                 if media_response is None:
@@ -78,6 +85,25 @@ async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=error_message)
+    
+    await functions.insert_into_user_movie_relation(movie_class=movie_class, user_class=user_class)
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                text=f'A new movie: <b>{movie_class.movie_name}</b>, is added in DB', parse_mode='HTML')
+
+
+
+
+
+
+async def my_movies(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    effective_chat = update.effective_chat
+
+    if not effective_chat:
+        logger.warning('effective_chat is None')
+
+    telegram_id = update.message.from_user.id
+
+
     
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):

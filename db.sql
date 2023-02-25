@@ -33,12 +33,12 @@ CREATE TABLE IF NOT EXISTS user_movie (
     user_id INTEGER,
     movie_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    priority_weight TINYINT(1) DEFAULT 10,
     watch_date DATETIME DEFAULT NULL,
     FOREIGN KEY(user_id) REFERENCES bot_user(id),
     FOREIGN KEY(movie_id) REFERENCES movies(id)
 
 );
+--     priority_weight TINYINT(1) DEFAULT 10,
 
 CREATE TABLE IF NOT EXISTS movies_genres (
     movie_id INTEGER NOT NULL,
