@@ -118,7 +118,7 @@ async def check_registration(telegram_id: int):
                     return data_class.User(**dict(user_row))
                 else:
                     return False
-    
+
 async def find_movie(id: str):
     """
     Downloads details about movie from KinopoiskAPI

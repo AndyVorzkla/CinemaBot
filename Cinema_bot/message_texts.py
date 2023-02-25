@@ -45,3 +45,12 @@ HELP = """
 -/movie_roll_all - выводит какие имеются
 -/movie_roll_del - удаляет фильм из рулетки
 """
+
+MOVIE = """
+Movie: <b>{movie_name}</b>
+
+Details: 
+<i>{details}</i>
+
+Genres: <b>{genres}</b>
+"""
