@@ -21,6 +21,18 @@ GREETINGS = """ Привеет, <b>{username}</b>!
 -/movie_roll_del - удаляет фильм из рулетки
 """
 
+GREETINGS_not_ready = """ Привеет, <b>{username}</b>!
+
+Команды бота:
+-/start - приветственное сообщение
+-/help - справка
+-/add - добавляет фильм в рулетку просмотра
+-/get - крутит рулетку
+-/all_movies - выводит какие имеются
+-/del_movie - удаляет фильм из рулетки
+
+"""
+
 HELP = """
 Команды бота:
 -/start - приветственное сообщение
@@ -32,4 +44,13 @@ HELP = """
 -/movie_roll_get - убирает фильм из рулетки просмотра
 -/movie_roll_all - выводит какие имеются
 -/movie_roll_del - удаляет фильм из рулетки
+"""
+
+MOVIE = """
+Movie: <b>{movie_name}</b>
+
+Details: 
+<i>{details}</i>
+
+Genres: <b>{genres}</b>
 """
