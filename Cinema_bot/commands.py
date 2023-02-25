@@ -58,22 +58,11 @@ async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
             movie_class = await functions.check_movie_in_db(id)
             if isinstance(movie_class, data_class.Movie):
                 logger.info('Movie is already in db')
-                await context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f'A movie: <b>{movie_class.movie_name}</b>, is already in DB', parse_mode='HTML')
 
             elif not movie_class:
                 movie_class, genres = await functions.find_movie(id)
 
                 await functions.insert_movie_in_db(movie_class, genres, user_telegram_id)
-                # await functions.insert_movie_genre(genres, movie_class.id) 
-                media_response = movie_class.youtube_url
-                if media_response is None:
-                    media_response = movie_class.picture
-                await context.bot.send_message(chat_id=update.effective_chat.id,
-                text=f'A new movie: <b>{movie_class.movie_name}</b>, is added in DB', parse_mode='HTML')
-                await context.bot.send_message(chat_id=update.effective_chat.id,
-                text=media_response)
             else:
                 logger.warning('Something wrong. We cant be here')
         else:
@@ -86,10 +75,16 @@ async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=update.effective_chat.id,
                 text=error_message)
     
+
+    print(movie_class, user_class)
     await functions.insert_into_user_movie_relation(movie_class=movie_class, user_class=user_class)
     await context.bot.send_message(chat_id=update.effective_chat.id,
                 text=f'A new movie: <b>{movie_class.movie_name}</b>, is added in DB', parse_mode='HTML')
-
+    media_response = movie_class.youtube_url
+    if media_response is None:
+        media_response = movie_class.picture
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                    text=media_response)
 
 
 

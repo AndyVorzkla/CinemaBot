@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS movies (
 
 CREATE TABLE IF NOT EXISTS user_movie (
     id INTEGER PRIMARY KEY,
-    user_id INTEGER,
-    movie_id INTEGER,
+    user_id INTEGER NOT NULL,
+    movie_id INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     watch_date DATETIME DEFAULT NULL,
     FOREIGN KEY(user_id) REFERENCES bot_user(id),

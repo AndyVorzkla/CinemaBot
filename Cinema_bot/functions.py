@@ -201,6 +201,8 @@ async def insert_movie_in_db(movie_class: data_class.Movie, genres: tuple, user_
                 rows =  await cursor.fetchall()
 
             movie_id = dict(movie_row)['id']
+            # add id from movie_db to movie_class
+            movie_class.id = movie_id
 
             # Genres ids of current movie
             ids = tuple(dict(row)['id'] for row in rows)
@@ -223,7 +225,7 @@ async def insert_into_user_movie_relation(movie_class: data_class.Movie, user_cl
             await conn.execute(sql, (user_class.id, movie_class.id,))
             await conn.commit()
         except aiosqlite.IntegrityError:
-                logger.error('User movie reference error sqlite exception')
+                logger.error('User movie ABORT sqlite exception')
 
     
 
