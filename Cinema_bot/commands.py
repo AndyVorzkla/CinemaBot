@@ -95,41 +95,19 @@ async def my_movies(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not effective_chat:
         logger.warning('effective_chat is None')
 
-    telegram_id = update.message.from_user.id
+    user_telegram_id = update.message.from_user.id
 
-    sql = """SELECT * FROM bot_user WHERE telegram_id = (?);"""
-    sql_2 = """
-            SELECT \
-              a.movie_id, \
-              b.movie_name, \
-              b.picture, \
-              b.details, \
-              group_concat(g.genre_name, ' ') as genres \
-            FROM user_movie as a \
-            LEFT JOIN movies as b \
-            ON a.movie_id = b.id \
-            LEFT JOIN movies_genres mg \
-            ON a.movie_id = mg.movie_id \
-            LEFT JOIN genres g \
-            ON mg.genre_id = g.id \
-            WHERE a.user_id = (?) \
-            GROUP BY a.movie_id \
-    """
-
-    async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
-        conn.row_factory = aiosqlite.Row
-        async with conn.execute(sql, (telegram_id,)) as cursor:
-            user_row = await cursor.fetchone()
-            if user_row:
-                user_class = data_class.User(**dict(user_row))
-            else:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text='Registration fail. Write /start')
-                return False
-        async with conn.execute(sql_2, (user_class.id,)) as cursor:
-            movie_rows = await cursor.fetchall()
-            movies = [dict(movie_row) for movie_row in movie_rows]
+    user_class = await functions.check_registration(user_telegram_id)
+    if not user_class:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                text='Registration fail. Write /start')
+        return False
     
+    movies = await functions.get_user_movies(user_class)
+
     for movie in movies:
+        media_response = movie['picture']
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=media_response)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=message_texts.MOVIE.format(
@@ -139,15 +117,9 @@ async def my_movies(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 ),
             parse_mode='HTML'
             )
-        media_response = movie['picture']
         # if media_response is None:
         #     media_response = movie_class.picture
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                        text=media_response)
-
-
-
-    
+        
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     effective_chat = update.effective_chat

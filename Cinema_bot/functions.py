@@ -214,7 +214,33 @@ async def insert_movie_in_db(movie_class: data_class.Movie, genres: tuple, user_
             except aiosqlite.IntegrityError:
                 logger.error('Already in GenreMovies (M-T-M) sqlite exception')
 
-                            
+async def get_user_movies(user_class: data_class.User):
+
+    sql_2 = """
+            SELECT \
+              a.movie_id, \
+              b.movie_name, \
+              b.picture, \
+              b.details, \
+              group_concat(g.genre_name, ' ') as genres \
+            FROM user_movie as a \
+            LEFT JOIN movies as b \
+            ON a.movie_id = b.id \
+            LEFT JOIN movies_genres mg \
+            ON a.movie_id = mg.movie_id \
+            LEFT JOIN genres g \
+            ON mg.genre_id = g.id \
+            WHERE a.user_id = (?) \
+            GROUP BY a.movie_id \
+    """
+    async with aiosqlite.connect(config.SQLITE_DB_FILE) as conn:
+        conn.row_factory = aiosqlite.Row
+        async with conn.execute(sql_2, (user_class.id,)) as cursor:
+            movie_rows = await cursor.fetchall()
+            
+    movies = [dict(movie_row) for movie_row in movie_rows]     
+    return movies
+                     
 
 async def insert_into_user_movie_relation(movie_class: data_class.Movie, user_class: data_class.User):
     sql = """INSERT OR ABORT INTO user_movie (user_id, movie_id) VALUES (?, ?);"""
