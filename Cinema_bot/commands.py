@@ -84,12 +84,7 @@ async def movie_roll_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                     text=media_response)
 
-
-
-
-
 async def my_movies(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Нужно зарефакторить
     effective_chat = update.effective_chat
 
     if not effective_chat:
@@ -117,9 +112,14 @@ async def my_movies(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 ),
             parse_mode='HTML'
             )
-        # if media_response is None:
-        #     media_response = movie_class.picture
+
         
+async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    pass
+    
+
+
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     effective_chat = update.effective_chat

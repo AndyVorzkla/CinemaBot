@@ -6,6 +6,8 @@ import re
 import json
 from dotenv import load_dotenv
 import data_class, config
+from telegram import Update
+from telegram.ext import ContextTypes
 from bot import logger
 
 
@@ -241,6 +243,19 @@ async def get_user_movies(user_class: data_class.User):
     movies = [dict(movie_row) for movie_row in movie_rows]     
     return movies
                      
+async def check_effective_chat_and_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    effective_chat = update.effective_chat
+
+    if not effective_chat:
+        logger.warning('effective_chat is None')
+
+    user_telegram_id = update.message.from_user.id
+
+    user_class = await check_registration(user_telegram_id)
+    if not user_class:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                text='Registration fail. Write /start')
+        return False
 
 async def insert_into_user_movie_relation(movie_class: data_class.Movie, user_class: data_class.User):
     sql = """INSERT OR ABORT INTO user_movie (user_id, movie_id) VALUES (?, ?);"""
